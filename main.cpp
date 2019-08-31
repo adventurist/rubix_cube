@@ -7,12 +7,25 @@ enum Axis { x, y };
 enum Direction { FORWARD, BACKWARD };
 enum Layer { FIRST, MIDDLE, OUTER };
 
+/**
+ * Side
+ *
+ * A side has a starting colour with coordinates intended to initially match that colour.
+ * A side is solved whenever all of the coordinates have the same colour
+ */
 struct Side {
   Colour colour;
   bool solved;
   std::vector<Colour> coordinates;
 };
 
+/**
+ * createSides
+ *
+ * @helper
+ * @returns {std::vector<Side} A vector of 9-coordinate sides of distinct colour, expressing the
+ * initial aesthetic state of a solved RubixCube
+ */
 std::vector<Side> createSides() {
   std::vector<Side> sides{};
   std::vector<int> num_of_coordinates {0, 1, 2, 3, 4, 5, 6, 7, 8};
@@ -27,7 +40,16 @@ std::vector<Side> createSides() {
   return sides;
 }
 
-
+/**
+ * RubixTurnInterface
+ *
+ * The turn interface of Rubik's cube is distinguished as the turning of one of 3 possible layers of
+ * sequential faces in 3 dimensional space in a chosen direction
+ *
+ * @interface
+ * @abstract
+ *
+ */
 class RubixTurnInterface {
   public:
     virtual void turn(Axis axis, Layer layer, Direction direction) = 0;
@@ -36,9 +58,9 @@ class RubixTurnInterface {
 class RubixCube : public RubixTurnInterface {
  public:
   RubixCube() { m_sides = createSides(); }
+
   bool isSolved() { return solved; }
 
-  void turn() { }
   void turn(Axis axis, Layer layer, Direction direction) {
       if (axis == Axis::x) {
         std::cout << "Horizontal turn" << std::endl;
@@ -57,6 +79,13 @@ class RubixCube : public RubixTurnInterface {
     return std::vector<int>{0, 4, 2, 6};
   }
 
+  /**
+   * RubixCube::rotateX
+   *
+   * @helper
+   * @parameter {Layer} layer The layer to rotate
+   * @parameter {Direction} direction The direction in which to elicit the rotation
+   */
   void rotateX(Layer layer, Direction direction) {
     Colour initial_side_colours[4]{};
     std::vector<int> initial_side_indexes = getInitialIndexesX();
@@ -84,23 +113,34 @@ class RubixCube : public RubixTurnInterface {
         coordinates[2] = 8;
       }
     }
-    if (layer == Layer::FIRST) {
-      for (int i : initial_side_indexes) {
-        for (int j : coordinates) {
-          if (direction == Direction::FORWARD) {
-            m_sides[i].coordinates.at(j) = initial_side_colours[j == 0 ? 2 : j - 1];
-          } else {
-            m_sides[i].coordinates.at(j) = initial_side_colours[j == 2 ? 0 : j + 1];
-          }
+
+    for (int i : initial_side_indexes) {
+      for (int j : coordinates) {
+        if (direction == Direction::FORWARD) {
+          m_sides[i].coordinates.at(j) = initial_side_colours[j == 0 ? 2 : j - 1];
+        } else {
+          m_sides[i].coordinates.at(j) = initial_side_colours[j == 2 ? 0 : j + 1];
         }
       }
     }
   }
 
+  /**
+   * RubixCube::rotateY
+   *
+   * @helper
+   * @parameter {Layer} layer The layer to rotate
+   * @parameter {Direction} direction The direction in which to elicit the rotation
+   */
   void rotateY(Layer layer, Direction direction) {
     std::vector<int> initial_side_indexes = getInitialIndexesY();
   }
 
+  /**
+   * Scramble
+   *
+   * Shuffles the colours of the coordinates in the RubixCube
+   */
   void scramble() {
     std::cout << "Shuffling and randomizing this cube's configuration" << std::endl;
   }
@@ -110,6 +150,12 @@ class RubixCube : public RubixTurnInterface {
   bool solved = false;
 };
 
+/**
+ * solveRubixCube
+ *
+ * @helper
+ * @parameter[in/out] {RubixCube} cube A RubixCube upon which to perform actions as dictated by inputted instructions
+ */
 void solveRubixCube (RubixCube &cube) {
   int axis{}, layer{}, direction{};
   std::cout << "1. Vertical Turn" << "\n" << "2.  Horizontal Turn" << "\n\n" << std::endl;
