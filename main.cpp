@@ -1,6 +1,7 @@
 #include <iostream>
 #include <variant>
 #include <vector>
+#include <map>
 
 enum Colour { Red, Green, Blue, Yellow, White, Orange };
 enum Axis { x, y };
@@ -55,9 +56,20 @@ class RubixTurnInterface {
     virtual void turn(Axis axis, Layer layer, Direction direction) = 0;
 };
 
+/**
+ * RubixCube
+ *
+ * @class
+ * @implements RubixTurnInterface
+ *
+ */
 class RubixCube : public RubixTurnInterface {
  public:
-  RubixCube() { m_sides = createSides(); }
+  RubixCube() {
+    m_sides = createSides();
+    solved = false;
+    facing_side = 0;
+  }
 
   bool isSolved() { return solved; }
 
@@ -76,7 +88,7 @@ class RubixCube : public RubixTurnInterface {
   }
 
   std::vector<int> getInitialIndexesY(int face = 0) {
-    return std::vector<int>{0, 4, 2, 6};
+    return std::vector<int>{0, 4, 2, 5};
   }
 
   /**
@@ -125,6 +137,46 @@ class RubixCube : public RubixTurnInterface {
     }
   }
 
+  std::map<int, int> getVerticalTransformationIndexForSide(int side = 0) {
+    switch (side) {
+      case 0: {
+        return std::map<int, int> {
+        {0, 5},
+        {4, 0},
+        {2, 4},
+        {5, 2}
+        };
+        break;
+      }
+      case 1: {
+        return std::map<int, int> {
+        {1, 5},
+        {4, 1},
+        {3, 4},
+        {5, 3}
+        };
+        break;
+      }
+      case 2: {
+        return std::map<int, int> {
+        {2, 5},
+        {4, 2},
+        {0, 4},
+        {5, 0}
+        };
+        break;
+      }
+      case 3: {
+        return std::map<int, int> {
+        {3, 5},
+        {4, 3},
+        {1, 4},
+        {5, 1}
+        };
+        break;
+      }
+    }
+  }
   /**
    * RubixCube::rotateY
    *
@@ -133,7 +185,44 @@ class RubixCube : public RubixTurnInterface {
    * @parameter {Direction} direction The direction in which to elicit the rotation
    */
   void rotateY(Layer layer, Direction direction) {
+    std::map<int, int> coordinate_map = getVerticalTransformationIndexForSide(0);
+    Colour initial_side_colours[4]{};
     std::vector<int> initial_side_indexes = getInitialIndexesY();
+    for (int i : initial_side_indexes) {
+      initial_side_colours[i] = m_sides[i].colour;
+    }
+    int coordinates[3]{};
+
+    switch (layer) {
+      case Layer::FIRST: {
+        coordinates[0] = 0;
+        coordinates[1] = 3;
+        coordinates[2] = 6;
+        break;
+      }
+      case Layer::MIDDLE: {
+        coordinates[0] = 1;
+        coordinates[1] = 4;
+        coordinates[2] = 7;
+        break;
+      }
+      case Layer::OUTER: {
+        coordinates[0] = 2;
+        coordinates[1] = 5;
+        coordinates[2] = 8;
+      }
+    }
+
+
+    for (int i : initial_side_indexes) {
+      for (int j : coordinates) {
+        if (direction == Direction::FORWARD) {
+          m_sides[i].coordinates.at(j) = initial_side_colours[j == 0 ? 2 : j - 1];
+        } else {
+          m_sides[i].coordinates.at(j) = initial_side_colours[j == 2 ? 0 : j + 1];
+        }
+      }
+    }
   }
 
   /**
@@ -147,7 +236,8 @@ class RubixCube : public RubixTurnInterface {
 
  private:
   std::vector<Side> m_sides;
-  bool solved = false;
+  int facing_side;
+  bool solved;
 };
 
 /**
