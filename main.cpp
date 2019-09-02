@@ -99,6 +99,7 @@ class RubixCube : public RubixTurnInterface {
    * @parameter {Direction} direction The direction in which to elicit the rotation
    */
   void rotateX(Layer layer, Direction direction) {
+    // TODO: Convert to rotateY's implementation
     Colour initial_side_colours[4]{};
     std::vector<int> initial_side_indexes = getInitialIndexesX();
     for (int i : initial_side_indexes) {
@@ -185,12 +186,6 @@ class RubixCube : public RubixTurnInterface {
    * @parameter {Direction} direction The direction in which to elicit the rotation
    */
   void rotateY(Layer layer, Direction direction) {
-    std::map<int, int> coordinate_map = getVerticalTransformationIndexForSide(0);
-    Colour initial_side_colours[4]{};
-    std::vector<int> initial_side_indexes = getInitialIndexesY();
-    for (int i : initial_side_indexes) {
-      initial_side_colours[i] = m_sides[i].colour;
-    }
     int coordinates[3]{};
 
     switch (layer) {
@@ -213,14 +208,26 @@ class RubixCube : public RubixTurnInterface {
       }
     }
 
+    std::map<int, int> coordinate_map = getVerticalTransformationIndexForSide(0);
+    std::map<int, std::vector<Colour> > initial_side_colours;
 
-    for (int i : initial_side_indexes) {
-      for (int j : coordinates) {
-        if (direction == Direction::FORWARD) {
-          m_sides[i].coordinates.at(j) = initial_side_colours[j == 0 ? 2 : j - 1];
-        } else {
-          m_sides[i].coordinates.at(j) = initial_side_colours[j == 2 ? 0 : j + 1];
-        }
+    for (auto& kv : coordinate_map) {
+      initial_side_colours.insert({
+        kv.first, std::vector<Colour>{
+          m_sides[kv.first].coordinates.at(coordinates[0]),
+          m_sides[kv.first].coordinates.at(coordinates[1]),
+          m_sides[kv.first].coordinates.at(coordinates[2])}
+        });
+    }
+
+    for (auto& transformation_pair : coordinate_map) {
+      int coordinate_index = 0;
+
+      int source = direction == Direction::FORWARD ? transformation_pair.first : transformation_pair.second;
+      int destination = direction == Direction::FORWARD ? transformation_pair.second : transformation_pair.first;
+      for (int coordinate_value : coordinates) {
+        m_sides.at(destination).coordinates.at(coordinate_value) = initial_side_colours[source].at(coordinate_index);
+        coordinate_index++;
       }
     }
   }
