@@ -3,7 +3,27 @@
 #include <vector>
 #include <map>
 
-enum Colour { Red, Green, Blue, Yellow, White, Orange };
+enum class Colour : int {
+  Red = 0,
+  Green = 1,
+  Blue = 2,
+  Yellow = 3,
+  White = 4,
+  Orange= 5
+};
+
+std::ostream& operator<< (std::ostream& os, Colour colour) {
+  switch (colour) {
+    case Colour::Red : return os << "Red";
+    case Colour::Green : return os << "Green";
+    case Colour::Blue : return os << "Blue";
+    case Colour::Yellow : return os << "Yellow";
+    case Colour::White : return os << "White";
+    case Colour::Orange : return os << "Orange";
+    default : return os << "UNKNOWN COLOUR";
+  }
+}
+
 enum Axis { x, y };
 enum Direction { FORWARD, BACKWARD };
 enum Layer { FIRST, MIDDLE, OUTER };
@@ -31,7 +51,7 @@ std::vector<Side> createSides() {
   std::vector<Side> sides{};
   std::vector<int> num_of_coordinates {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-  for (auto colour : { Red, Green, Blue, Yellow, White, Orange }) {
+  for (auto colour : { Colour::Red, Colour::Green, Colour::Blue, Colour::Yellow, Colour::White, Colour::Orange }) {
     std::vector<Colour> coordinates{};
     for (auto i : num_of_coordinates) {
       coordinates.push_back(colour);
@@ -40,6 +60,101 @@ std::vector<Side> createSides() {
   }
   return sides;
 }
+
+std::vector<int> getCoordinates(Axis axis, Layer layer) {
+  std::vector<int> coordinates{};
+
+  if (axis == Axis::y) {
+    switch (layer) {
+      case Layer::FIRST: {
+        coordinates[0] = 0;
+        coordinates[1] = 3;
+        coordinates[2] = 6;
+        break;
+      }
+      case Layer::MIDDLE: {
+        coordinates[0] = 1;
+        coordinates[1] = 4;
+        coordinates[2] = 7;
+        break;
+      }
+      case Layer::OUTER: {
+        coordinates[0] = 2;
+        coordinates[1] = 5;
+        coordinates[2] = 8;
+      }
+    }
+  } else {
+    switch (layer) {
+      case Layer::FIRST: {
+        coordinates[0] = 0;
+        coordinates[1] = 1;
+        coordinates[2] = 2;
+        break;
+      }
+      case Layer::MIDDLE: {
+        coordinates[0] = 3;
+        coordinates[1] = 4;
+        coordinates[2] = 5;
+        break;
+      }
+      case Layer::OUTER: {
+        coordinates[0] = 6;
+        coordinates[1] = 7;
+        coordinates[2] = 8;
+      }
+    }
+  }
+  return coordinates;
+}
+
+std::map<int, int> getTransformationMap(Axis axis, int side = 0) {
+  if (axis == Axis::y) {
+    switch (side) {
+      case 0: {
+        return std::map<int, int> {
+        {0, 1},
+        {1, 2},
+        {3, 4},
+        {5, 2}
+        };
+        break;
+      }
+      case 1: {
+        return std::map<int, int> {
+        {1, 5},
+        {4, 1},
+        {3, 4},
+        {5, 3}
+        };
+        break;
+      }
+      case 2: {
+        return std::map<int, int> {
+        {2, 5},
+        {4, 2},
+        {0, 4},
+        {5, 0}
+        };
+        break;
+      }
+      case 3: {
+        return std::map<int, int> {
+        {3, 5},
+        {4, 3},
+        {1, 4},
+        {5, 1}
+        };
+        break;
+      }
+    }
+  } else {
+    return std::map<int, int> {
+      {0, 1}, {1, 2}, {2, 3}, {3, 4}
+    };
+  }
+  return std::map<int, int> {};
+  }
 
 /**
  * RubixTurnInterface
@@ -76,142 +191,47 @@ class RubixCube : public RubixTurnInterface {
   void turn(Axis axis, Layer layer, Direction direction) {
       if (axis == Axis::x) {
         std::cout << "Horizontal turn" << std::endl;
-        rotateX(layer, direction);
+        rotate(Axis::x, layer, direction);
       } else {
         std::cout << "Vertical turn" << std::endl;
-        rotateY(layer, direction);
+        rotate(Axis::y, layer, direction);
       }
   }
 
-  std::vector<int> getInitialIndexesX(int face = 0) {
-    return std::vector<int>{0, 1, 2, 3};
-  }
-
-  std::vector<int> getInitialIndexesY(int face = 0) {
-    return std::vector<int>{0, 4, 2, 5};
-  }
-
-  /**
-   * RubixCube::rotateX
-   *
-   * @helper
-   * @parameter {Layer} layer The layer to rotate
-   * @parameter {Direction} direction The direction in which to elicit the rotation
-   */
-  void rotateX(Layer layer, Direction direction) {
-    // TODO: Convert to rotateY's implementation
-    Colour initial_side_colours[4]{};
-    std::vector<int> initial_side_indexes = getInitialIndexesX();
-    for (int i : initial_side_indexes) {
-      initial_side_colours[i] = m_sides[i].colour;
-    }
-    int coordinates[3]{};
-
-    switch (layer) {
-      case Layer::FIRST: {
-        coordinates[0] = 0;
-        coordinates[1] = 1;
-        coordinates[2] = 2;
-        break;
-      }
-      case Layer::MIDDLE: {
-        coordinates[0] = 3;
-        coordinates[1] = 4;
-        coordinates[2] = 5;
-        break;
-      }
-      case Layer::OUTER: {
-        coordinates[0] = 6;
-        coordinates[1] = 7;
-        coordinates[2] = 8;
-      }
-    }
-
-    for (int i : initial_side_indexes) {
-      for (int j : coordinates) {
-        if (direction == Direction::FORWARD) {
-          m_sides[i].coordinates.at(j) = initial_side_colours[j == 0 ? 2 : j - 1];
-        } else {
-          m_sides[i].coordinates.at(j) = initial_side_colours[j == 2 ? 0 : j + 1];
+  void render() {
+    std::cout << "\n_______CUBE_______\n" << std::endl;
+    int index = 0;
+    for (const auto& side : m_sides) {
+      std::cout << "## Side " << index << std::endl;
+      int coordinateIndex = 1;
+      for (const auto& coordinate : side.coordinates) {
+        std::cout << coordinate << " ";
+        if (coordinateIndex % 3 == 0) {
+          std::cout << "\n";
         }
+        coordinateIndex++;
       }
+      std::cout << std::endl;
+      index++;
     }
+    std::cout << "_____________________\n\n" << std::endl;
   }
 
-  std::map<int, int> getVerticalTransformationIndexForSide(int side = 0) {
-    switch (side) {
-      case 0: {
-        return std::map<int, int> {
-        {0, 5},
-        {4, 0},
-        {2, 4},
-        {5, 2}
-        };
-        break;
-      }
-      case 1: {
-        return std::map<int, int> {
-        {1, 5},
-        {4, 1},
-        {3, 4},
-        {5, 3}
-        };
-        break;
-      }
-      case 2: {
-        return std::map<int, int> {
-        {2, 5},
-        {4, 2},
-        {0, 4},
-        {5, 0}
-        };
-        break;
-      }
-      case 3: {
-        return std::map<int, int> {
-        {3, 5},
-        {4, 3},
-        {1, 4},
-        {5, 1}
-        };
-        break;
-      }
-    }
-  }
   /**
    * RubixCube::rotateY
    *
    * @helper
+   * @parameter {Axis} axis The axis upon which to rotate
    * @parameter {Layer} layer The layer to rotate
    * @parameter {Direction} direction The direction in which to elicit the rotation
    */
-  void rotateY(Layer layer, Direction direction) {
-    int coordinates[3]{};
+  void rotate(Axis axis, Layer layer, Direction direction) {
+    std::vector<int> coordinates = getCoordinates(axis, layer);
 
-    switch (layer) {
-      case Layer::FIRST: {
-        coordinates[0] = 0;
-        coordinates[1] = 3;
-        coordinates[2] = 6;
-        break;
-      }
-      case Layer::MIDDLE: {
-        coordinates[0] = 1;
-        coordinates[1] = 4;
-        coordinates[2] = 7;
-        break;
-      }
-      case Layer::OUTER: {
-        coordinates[0] = 2;
-        coordinates[1] = 5;
-        coordinates[2] = 8;
-      }
-    }
-
-    std::map<int, int> coordinate_map = getVerticalTransformationIndexForSide(0);
+    std::map<int, int> coordinate_map = getTransformationMap(axis, 0);
     std::map<int, std::vector<Colour> > initial_side_colours;
 
-    for (auto& kv : coordinate_map) {
+    for (const auto& kv : coordinate_map) {
       initial_side_colours.insert({
         kv.first, std::vector<Colour>{
           m_sides[kv.first].coordinates.at(coordinates[0]),
@@ -220,7 +240,7 @@ class RubixCube : public RubixTurnInterface {
         });
     }
 
-    for (auto& transformation_pair : coordinate_map) {
+    for (const auto& transformation_pair : coordinate_map) {
       int coordinate_index = 0;
 
       int source = direction == Direction::FORWARD ? transformation_pair.first : transformation_pair.second;
@@ -298,6 +318,10 @@ void solveRubixCube (RubixCube &cube) {
 
 int main() {
   RubixCube rubix_cube{};
+
+  std::cout << "Original state:" << std::endl;
+
+  rubix_cube.render();
 
   solveRubixCube(rubix_cube);
 
