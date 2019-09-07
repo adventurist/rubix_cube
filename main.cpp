@@ -62,46 +62,46 @@ std::vector<Side> createSides() {
 }
 
 std::vector<int> getCoordinates(Axis axis, Layer layer) {
-  std::vector<int> coordinates{};
+  std::vector<int> coordinates{0, 0, 0};
 
   if (axis == Axis::y) {
     switch (layer) {
       case Layer::FIRST: {
-        coordinates[0] = 0;
-        coordinates[1] = 3;
-        coordinates[2] = 6;
+        coordinates.at(0) = 0;
+        coordinates.at(1) = 3;
+        coordinates.at(2) = 6;
         break;
       }
       case Layer::MIDDLE: {
-        coordinates[0] = 1;
-        coordinates[1] = 4;
-        coordinates[2] = 7;
+        coordinates.at(0) = 1;
+        coordinates.at(1) = 4;
+        coordinates.at(2) = 7;
         break;
       }
       case Layer::OUTER: {
-        coordinates[0] = 2;
-        coordinates[1] = 5;
-        coordinates[2] = 8;
+        coordinates.at(0) = 2;
+        coordinates.at(1) = 5;
+        coordinates.at(2) = 8;
       }
     }
   } else {
     switch (layer) {
       case Layer::FIRST: {
-        coordinates[0] = 0;
-        coordinates[1] = 1;
-        coordinates[2] = 2;
+        coordinates.at(0) = 0;
+        coordinates.at(1) = 1;
+        coordinates.at(2) = 2;
         break;
       }
       case Layer::MIDDLE: {
-        coordinates[0] = 3;
-        coordinates[1] = 4;
-        coordinates[2] = 5;
+        coordinates.at(0) = 3;
+        coordinates.at(1) = 4;
+        coordinates.at(2) = 5;
         break;
       }
       case Layer::OUTER: {
-        coordinates[0] = 6;
-        coordinates[1] = 7;
-        coordinates[2] = 8;
+        coordinates.at(0) = 6;
+        coordinates.at(1) = 7;
+        coordinates.at(2) = 8;
       }
     }
   }
@@ -324,6 +324,8 @@ int main() {
   rubix_cube.render();
 
   solveRubixCube(rubix_cube);
+
+  rubix_cube.render();
 
   auto solved = rubix_cube.isSolved();
 
